@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const SHEET_NAME = 'AT7';
 
     // GANTI DENGAN KUNCI API ANDA YANG SEBENARNYA!
-    const API_KEY = 'GANTI_DENGAN_KUNCI_API_ANDA'; // <<< GANTI INI DENGAN KUNCI API ASLI ANDA
+    const API_KEY = 'AIzaSyCN-0307JYEa8VjjX7DYEKeMX5pMIE61S0'; // <<< GANTI INI DENGAN KUNCI API ASLI ANDA
 
     loginButton.addEventListener('click', async () => {
         const nisn = nisnInput.value.trim();
