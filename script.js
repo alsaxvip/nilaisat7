@@ -8,6 +8,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const SPREADSHEET_ID = '1P7ppsieVzXcbpNfqI0X_obSCpN3fUJIe9AEHIKmaJFo';
     const SHEET_NAME = 'AT7';
 
+    // GANTI DENGAN KUNCI API ANDA YANG SEBENARNYA!
+    const API_KEY = 'AIzaSyCN-0307JYEa8VjjX7DYEKeMX5pMIE61S0'; // <<< GANTI INI DENGAN KUNCI API ASLI ANDA
+
     loginButton.addEventListener('click', async () => {
         const nisn = nisnInput.value.trim();
         if (nisn === '') {
@@ -20,16 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
         scoreTableBody.innerHTML = ''; // Kosongkan tabel sebelum memuat data baru
 
         try {
-            // Menggunakan Google Sheets API v4
-            // Perhatian: Untuk deployment di GitHub Pages, Anda perlu mengamankan kunci API Anda.
-            // Cara yang lebih aman adalah menggunakan backend serverless seperti Google Cloud Functions
-            // untuk mengambil data dari Google Sheets.
-            // Untuk tujuan demonstrasi dan pembelajaran, kita akan memanggilnya langsung.
-            // Anda perlu mengaktifkan Google Sheets API di Google Cloud Console
-            // dan membuat kunci API (API key) yang dibatasi.
-            // GANTI DENGAN KUNCI API ANDA YANG SEBENARNYA!
-            const API_KEY = 'AIzaSyCN-0307JYEa8VjjX7DYEKeMX5pMIE61S0'; // <<< GANTI INI DENGAN KUNCI API ASLI ANDA
-
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}?key=${API_KEY}`;
             const response = await fetch(url);
 
@@ -46,22 +39,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Asumsi header di row 2 (index 1), data di row 3 (index 2) dan seterusnya
-            const headers = values[1]; // Baris kedua adalah header
+            // Asumsi header di row 2 (indeks 1), data di row 3 (indeks 2) dan seterusnya
+            // const headers = values[1]; // Jika Anda ingin menggunakan header secara dinamis
             const studentData = values.slice(2); // Data mulai dari baris ketiga
 
-            let foundStudent = false;
             let rowNumber = 1;
+            let nisnFound = false; // Flag untuk memeriksa apakah NISN yang dicari ditemukan
 
+            // Iterasi melalui semua data yang diambil, bukan hanya yang cocok dengan NISN
             studentData.forEach((row) => {
-                // Asumsi kolom NISN ada di salah satu kolom header, kita perlu mencarinya
-                // Untuk contoh ini, kita asumsikan NISN ada di kolom tertentu
-                // Anda perlu menyesuaikan indeks kolom berdasarkan struktur spreadsheet Anda.
-                // Misal, jika NISN ada di kolom ketiga (indeks 2)
-                const studentName = row[0]; // Kolom A
-                const nisnFromSheet = row[1]; // Kolom B
-                const studentClass = row[2]; // Kolom C
-                const studentScore = row[3]; // Kolom D
+                // Pastikan baris memiliki cukup kolom sebelum mengakses indeks
+                if (row.length < 5) { // Asumsi minimal 5 kolom: Nama, NISN, Kelas, Nilai, Kunci Jawaban
+                    // Bisa log error atau abaikan baris yang tidak lengkap
+                    console.warn('Baris data tidak lengkap:', row);
+                    return; // Lewati baris ini
+                }
+
+                // SESUAIKAN INDEKS KOLOM INI DENGAN STRUKTUR SPREADSHEET ANDA
+                const studentName = row[0];        // Asumsi Kolom A: NAMA LENGKAP
+                const nisnFromSheet = row[1];      // Asumsi Kolom B: NISN
+                const studentClass = row[2];       // Asumsi Kolom C: KELAS
+                const studentScoreRaw = row[3];    // Asumsi Kolom D: NILAI
                 const correctAnswerRaw = row[4];   // Asumsi Kolom E: KUNCI JAWABAN (jika ada)
 
                 // Konversi nilai ke angka dan bulatkan
