@@ -8,6 +8,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const SPREADSHEET_ID = '1P7ppsieVzXcbpNfqI0X_obSCpN3fUJIe9AEHIKmaJFo';
     const SHEET_NAME = 'AT7';
 
+    // GANTI DENGAN KUNCI API ANDA YANG SEBENARNYA!
+    const API_KEY = 'GANTI_DENGAN_KUNCI_API_ANDA'; // <<< GANTI INI DENGAN KUNCI API ASLI ANDA
+
     loginButton.addEventListener('click', async () => {
         const nisn = nisnInput.value.trim();
         if (nisn === '') {
@@ -20,16 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
         scoreTableBody.innerHTML = ''; // Kosongkan tabel sebelum memuat data baru
 
         try {
-            // Menggunakan Google Sheets API v4
-            // Perhatian: Untuk deployment di GitHub Pages, Anda perlu mengamankan kunci API Anda.
-            // Cara yang lebih aman adalah menggunakan backend serverless seperti Google Cloud Functions
-            // untuk mengambil data dari Google Sheets.
-            // Untuk tujuan demonstrasi dan pembelajaran, kita akan memanggilnya langsung.
-            // Anda perlu mengaktifkan Google Sheets API di Google Cloud Console
-            // dan membuat kunci API (API key) yang dibatasi.
-            // GANTI DENGAN KUNCI API ANDA YANG SEBENARNYA!
-            const API_KEY = 'AIzaSyCN-0307JYEa8VjjX7DYEKeMX5pMIE61S0'; // <<< GANTI INI DENGAN KUNCI API ASLI ANDA
-
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}?key=${API_KEY}`;
             const response = await fetch(url);
 
@@ -46,49 +39,61 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Asumsi header di row 2 (index 1), data di row 3 (index 2) dan seterusnya
-            const headers = values[1]; // Baris kedua adalah header
+            // Asumsi header di row 2 (indeks 1), data di row 3 (indeks 2) dan seterusnya
+            // const headers = values[1]; // Jika Anda ingin menggunakan header secara dinamis
             const studentData = values.slice(2); // Data mulai dari baris ketiga
 
-            let foundStudent = false;
             let rowNumber = 1;
+            let nisnFound = false; // Flag untuk memeriksa apakah NISN yang dicari ditemukan
 
+            // Iterasi melalui semua data yang diambil, bukan hanya yang cocok dengan NISN
             studentData.forEach((row) => {
-                // Asumsi kolom NISN ada di salah satu kolom header, kita perlu mencarinya
-                // Untuk contoh ini, kita asumsikan NISN ada di kolom tertentu
-                // Anda perlu menyesuaikan indeks kolom berdasarkan struktur spreadsheet Anda.
-                // Misal, jika NISN ada di kolom ketiga (indeks 2)
-                const studentName = row[0]; // Asumsi Nama Lengkap di kolom pertama
-                const nisnFromSheet = row[1]; // Ganti indeks ini jika kolom NISN berbeda di spreadsheet Anda
-                const studentClass = row[2]; // Asumsi Kelas di kolom ketiga
-                const studentScore = row[3]; // Asumsi Nilai di kolom keempat
+                // Pastikan baris memiliki cukup kolom sebelum mengakses indeks
+                if (row.length < 5) { // Asumsi minimal 5 kolom: Nama, NISN, Kelas, Nilai, Kunci Jawaban
+                    // Bisa log error atau abaikan baris yang tidak lengkap
+                    console.warn('Baris data tidak lengkap:', row);
+                    return; // Lewati baris ini
+                }
 
+                // SESUAIKAN INDEKS KOLOM INI DENGAN STRUKTUR SPREADSHEET ANDA
+                const studentName = row[0];        // Asumsi Kolom A: NAMA LENGKAP
+                const nisnFromSheet = row[1];      // Asumsi Kolom B: NISN
+                const studentClass = row[2];       // Asumsi Kolom C: KELAS
+                const studentScoreRaw = row[3];    // Asumsi Kolom D: NILAI
+                const correctAnswerRaw = row[4];   // Asumsi Kolom E: KUNCI JAWABAN (jika ada)
+
+                // Konversi nilai ke angka dan bulatkan
+                let studentScore = parseInt(studentScoreRaw, 10);
+                if (isNaN(studentScore)) studentScore = 0; // Atasi jika bukan angka
+                studentScore = Math.round(studentScore);
+
+                let correctAnswer = parseInt(correctAnswerRaw, 10);
+                if (isNaN(correctAnswer)) correctAnswer = 0; // Atasi jika bukan angka
+
+                // Hanya tampilkan baris jika NISN yang dimasukkan cocok
+                // Jika Anda ingin menampilkan SEMUA data (1-40) setelah login,
+                // dan hanya menyoroti NISN yang cocok, maka ubah logika ini.
                 if (nisnFromSheet && nisnFromSheet.toString() === nisn) {
-                    foundStudent = true;
-                    let score = parseInt(studentScore, 10);
-                    // Pembulatan nilai terdekat
-                    score = Math.round(score);
+                    nisnFound = true; // NISN ditemukan
 
                     const newRow = scoreTableBody.insertRow();
-                    newRow.insertCell().textContent = rowNumber++; // Kolom NOMOR
+                    newRow.insertCell().textContent = rowNumber; // Kolom NOMOR (ini akan berlanjut sesuai jumlah data)
                     newRow.insertCell().textContent = studentName;
                     newRow.insertCell().textContent = nisnFromSheet;
                     newRow.insertCell().textContent = studentClass;
-                    newRow.insertCell().textContent = score;
+                    newRow.insertCell().textContent = studentScore;
 
-                    // Implementasi highlight merah jika ada nilai yang "salah"
-                    // Logika ini perlu disesuaikan dengan kriteria "salah" Anda.
-                    // Misalnya, jika ada nilai kunci jawaban di spreadsheet dan nilai siswa berbeda.
-                    // Untuk contoh ini, kita hanya akan highlight secara demonstratif.
-                    // Jika Anda memiliki kolom kunci jawaban, Anda akan membandingkannya di sini.
-                    // Contoh sederhana: jika nilai di bawah 70 dianggap perlu highlight
-                    if (score < 75) { // Contoh kondisi: nilai di bawah 70 di-highlight merah
-                        newRow.cells[4].classList.add('highlight-red');
+                    // Logika highlight merah: jika nilai siswa TIDAK SAMA dengan kunci jawaban
+                    if (studentScore !== correctAnswer) {
+                        newRow.cells[4].classList.add('highlight-red'); // Kolom NILAI
                     }
+
+                    // Increment rowNumber hanya untuk baris yang ditampilkan/diproses
+                    rowNumber++;
                 }
             });
 
-            if (foundStudent) {
+            if (nisnFound) {
                 scoreDisplay.style.display = 'block';
             } else {
                 errorMessage.textContent = 'NISN tidak ditemukan. Silakan coba lagi.';
