@@ -58,10 +58,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Untuk contoh ini, kita asumsikan NISN ada di kolom tertentu
                 // Anda perlu menyesuaikan indeks kolom berdasarkan struktur spreadsheet Anda.
                 // Misal, jika NISN ada di kolom ketiga (indeks 2)
-                const nisnFromSheet = row[2]; // Ganti indeks ini jika kolom NISN berbeda di spreadsheet Anda
                 const studentName = row[0]; // Asumsi Nama Lengkap di kolom pertama
-                const studentClass = row[3]; // Asumsi Kelas di kolom keempat
-                const studentScore = row[4]; // Asumsi Nilai di kolom kelima
+                const nisnFromSheet = row[1]; // Ganti indeks ini jika kolom NISN berbeda di spreadsheet Anda
+                const studentClass = row[2]; // Asumsi Kelas di kolom ketiga
+                const studentScore = row[3]; // Asumsi Nilai di kolom keempat
 
                 if (nisnFromSheet && nisnFromSheet.toString() === nisn) {
                     foundStudent = true;
